@@ -38,7 +38,26 @@ It does not require you to upload your financial information to a server for cal
 
 ## Screenshots
 
-Screenshots demonstrating the application will be added here.
+### Main Screen
+
+![Retirement Income & Tax main screen](screenshots/App_Start.png)
+
+### The husband's settings
+
+![IThe husband's settings](screenshots/Husband.png)
+
+### The wife's settings
+
+![IThe wife's settings](screenshots/Wife.png)
+
+### Income and Tax Results
+
+![Income and Tax Results](screenshots/Income_Tax.png)
+
+### Income and Investment Projection
+
+![Income and Investment Projection](screenshots/Income_Investment.png)
+
 
 ## Download and Run
 
