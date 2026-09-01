@@ -61,9 +61,16 @@ It does not require you to upload your financial information to a server for cal
 
 ## Download and Run
 
-Download instructions will be added when the first public release is published.
+Download the latest release from the repository's **Releases** section.
 
-The application does not require installation. After downloading and extracting the files, users will be able to open the application directly in a supported web browser.
+1. Open the latest release.
+2. Download the ZIP file.
+3. Extract the ZIP file to a folder.
+4. Open `Retirement_Income_Tax_Planner.html` in a modern web browser.
+
+No installation is required.
+
+The application runs locally in your browser and can be used offline after download.
 
 ## Feedback and Bug Reports
 
