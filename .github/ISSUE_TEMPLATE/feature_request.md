@@ -1,10 +1,10 @@
 ---
-
 name: Feature request
 about: Suggest an improvement or new feature
 title: "[Suggestion] "
-labels: enhancement
--------------------
+labels: ""
+assignees: ""
+---
 
 ## What would you like to improve?
 
