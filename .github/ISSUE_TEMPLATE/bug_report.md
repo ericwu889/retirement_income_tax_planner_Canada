@@ -1,10 +1,10 @@
 ---
-
 name: Bug report
 about: Report a problem or incorrect result
 title: "[Bug] "
-labels: bug
------------
+labels: ""
+assignees: ""
+---
 
 ## What happened?
 
