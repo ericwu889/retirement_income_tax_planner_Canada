@@ -1,4 +1,4 @@
-# retirement_income_tax_planner_Canada
+# Retirement Income & Tax Planner for Canadians
 Canadian retirement income, tax, and investment scenario analysis tool for educational use.
 
 # Retirement Income & Tax
