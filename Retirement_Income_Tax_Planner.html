@@ -10,7 +10,7 @@
   :root {
     --ink:#12203A; --regular:#1F6F5C; --rrsp:#2C4A7C; --tfsa:#A8447A; --benefits:#6B4C93;
     --tax:#B5542B; --red:#DC2626; --gold:#B08A2E; --slate:#6B7A8F;
-    --husband:#3B6E8F; --wife:#C2617A;
+    --self:#3B6E8F; --spouse:#C2617A;
     --muted:#2E3540; --border:#DEDCD3; --bg:#FAFBF9; --panel:#FFFFFF; --text:#16202B;
   }
   * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
@@ -764,8 +764,8 @@ function calcProvincialTopUp(province, personOasStarted, personAge, spouseAge, s
 }
 
 const TFSA_COLOR = "#A8447A";
-const HUSBAND_COLOR = "#3B6E8F";
-const WIFE_COLOR = "#C2617A";
+const SELF_COLOR = "#3B6E8F";
+const SPOUSE_COLOR = "#C2617A";
 
 // =============================================================================
 // Simulation
@@ -1153,15 +1153,15 @@ const state = {
   province: "ON", // "ON", "QC", "AB", "PE"
   horizon: 20, // Planning Horizon in years; range 5-40
   inflationPct: 2.0, // Planning assumption used to index future tax/benefit values
-  selectedPerson: "husband",
-  husband: Object.assign({}, DEFAULT_PERSON),
-  wife: Object.assign({}, DEFAULT_PERSON),
+  selectedPerson: "self",
+  self: Object.assign({}, DEFAULT_PERSON),
+  spouse: Object.assign({}, DEFAULT_PERSON),
   ageGap: 0, 
   collapsed: { intro: false, plan: false, oasCpp: false, pension: true, rrif: true, tfsa: true, regular: true,
     income: false, combinedIncome: true, tax: true, combinedTax: true, balance: true, combinedBalance: true, assumptions: false },
 };
-function getPerson() { return state.selectedPerson === "husband" ? state.husband : state.wife; }
-function personLabel() { return state.selectedPerson === "husband" ? "Husband" : "Wife"; }
+function getPerson() { return state.selectedPerson === "self" ? state.self : state.spouse; }
+function personLabel() { return state.selectedPerson === "self" ? "You" : "Spouse"; }
 function pensionPlanName() { return state.province === "QC" ? "QPP" : "CPP"; }
 function topUpName() { 
   if (state.province === "QC") return "Senior Assistance";
@@ -1232,12 +1232,12 @@ function numberFieldHTML(id, label, value, opts) {
 }
 
 function personToggleHTML() {
-  const h = state.selectedPerson === "husband";
+  const isSelf = state.selectedPerson === "self";
   return '<div class="field">' +
     '<span class="field-label">Planning For</span>' +
     '<div class="person-toggle-box">' +
-      '<button type="button" id="btnHusband" aria-pressed="' + h + '" class="' + (h ? 'active' : '') + '">' + icon('user', h ? '#FFFFFF' : '#2E3540', 13) + 'Husband</button>' +
-      '<button type="button" id="btnWife" aria-pressed="' + (!h) + '" class="' + (!h ? 'active' : '') + '">' + icon('user', !h ? '#FFFFFF' : '#2E3540', 13) + 'Wife</button>' +
+      '<button type="button" id="btnSelf" aria-pressed="' + isSelf + '" class="' + (isSelf ? 'active' : '') + '">' + icon('user', isSelf ? '#FFFFFF' : '#2E3540', 13) + 'You</button>' +
+      '<button type="button" id="btnSpouse" aria-pressed="' + (!isSelf) + '" class="' + (!isSelf ? 'active' : '') + '">' + icon('user', !isSelf ? '#FFFFFF' : '#2E3540', 13) + 'Spouse</button>' +
     '</div></div>';
 }
 
@@ -1245,7 +1245,7 @@ function renderControls() {
   const p = getPerson();
   const lbl = personLabel();
   const ageGap = state.ageGap;
-  const wifeAgeAtHusbandRetire = state.husband.retireAge + ageGap;
+  const spouseAgeAtSelfRetire = state.self.retireAge + ageGap;
 
   let html = '';
   let hide = state.collapsed.plan ? ' style="display:none"' : '';
@@ -1253,7 +1253,7 @@ function renderControls() {
   html += '<div class="field-grid"' + hide + '>';
   html += personToggleHTML();
   html += numberFieldHTML('retireAge', 'Retire Age - ' + lbl, p.retireAge, { min: 50, max: 71, step: 1 });
-  html += numberFieldHTML('wifeAgeAtHusbandRetire', "Wife's Age When Husband Retire", wifeAgeAtHusbandRetire, { min: 18, max: 100, step: 1, readOnly: state.selectedPerson === "wife" });
+  html += numberFieldHTML('spouseAgeAtSelfRetire', "Spouse's Age When You Retire", spouseAgeAtSelfRetire, { min: 18, max: 100, step: 1, readOnly: state.selectedPerson === "spouse" });
   html += numberFieldHTML('planningHorizon', 'Planning Horizon (Years)', state.horizon, { min: 5, max: 40, step: 1 });
   html += numberFieldHTML('inflationPct', 'Planning Annual Inflation', state.inflationPct, { min: 0, max: 10, step: 0.1, suffix: '%' });
   html += '</div>';
@@ -1318,8 +1318,8 @@ function renderControls() {
 }
 
 function wireControls() {
-  document.getElementById('btnHusband').addEventListener('click', () => selectPerson('husband'));
-  document.getElementById('btnWife').addEventListener('click', () => selectPerson('wife'));
+  document.getElementById('btnSelf').addEventListener('click', () => selectPerson('self'));
+  document.getElementById('btnSpouse').addEventListener('click', () => selectPerson('spouse'));
 
   document.querySelectorAll('#controls .section-toggle').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1329,18 +1329,18 @@ function wireControls() {
     });
   });
 
-  const wa = document.getElementById('wifeAgeAtHusbandRetire');
+  const wa = document.getElementById('spouseAgeAtSelfRetire');
   wa.addEventListener('input', () => {
     const raw = parseFloat(wa.value);
-    if (!isNaN(raw)) state.ageGap = Math.round(raw) - state.husband.retireAge;
+    if (!isNaN(raw)) state.ageGap = Math.round(raw) - state.self.retireAge;
     syncFieldsFromState();
     renderResults();
   });
   wa.addEventListener('blur', () => {
     let v = parseFloat(wa.value);
-    if (isNaN(v)) v = state.husband.retireAge + state.ageGap;
+    if (isNaN(v)) v = state.self.retireAge + state.ageGap;
     v = Math.min(Math.max(Math.round(v), 18), 100);
-    state.ageGap = v - state.husband.retireAge;
+    state.ageGap = v - state.self.retireAge;
     wa.value = v;
     syncFieldsFromState();
     renderResults();
@@ -1421,9 +1421,9 @@ function syncFieldsFromState() {
     if (def.min != null) el.min = typeof def.min === 'function' ? def.min(p) : def.min;
     if (def.max != null) el.max = typeof def.max === 'function' ? def.max(p) : def.max;
   });
-  const waEl = document.getElementById('wifeAgeAtHusbandRetire');
+  const waEl = document.getElementById('spouseAgeAtSelfRetire');
   if (waEl && waEl !== active) {
-    waEl.value = state.husband.retireAge + state.ageGap;
+    waEl.value = state.self.retireAge + state.ageGap;
   }
 }
 
@@ -1598,8 +1598,8 @@ function buildChart(containerId, data, barSeries, lineSeries, tooltipHTML, xLabe
 }
 
 function bothAgesTitle(d) {
-  if (d.husbandAge != null && d.wifeAge != null) {
-    return 'Husband: ' + d.husbandAge + ' \u00B7 Wife: ' + d.wifeAge;
+  if (d.selfAge != null && d.spouseAge != null) {
+    return 'You: ' + d.selfAge + ' \u00B7 Spouse: ' + d.spouseAge;
   }
   return 'Age ' + d.age;
 }
@@ -1665,11 +1665,11 @@ function familyTooltipHTML(d, barSeries, lineSeries, xLabelPrefix, hasAnyValue) 
   barSeries.forEach(s => {
     h += '<div class="tt-row"><span style="color:' + s.color + '">' + s.name + '</span><span class="v">' + moneyTooltip(d[s.key] || 0) + '</span></div>';
   });
-  const hasTaxOrBottomLine = hasAnyValue('HusbandTax') || hasAnyValue('WifeTax') || hasAnyValue('Combined net income') || hasAnyValue('Combined Total Assets');
+  const hasTaxOrBottomLine = hasAnyValue('SelfTax') || hasAnyValue('SpouseTax') || hasAnyValue('Combined net income') || hasAnyValue('Combined Total Assets');
   if (hasTaxOrBottomLine) h += '<div class="tt-group">Tax &amp; Bottom Line</div>';
-  if (hasAnyValue('HusbandTax')) h += '<div class="tt-row" style="color:' + HUSBAND_COLOR + '"><span>Husband Income Tax</span><span class="v">(' + moneyTooltip(d.HusbandTax || 0) + ')</span></div>';
-  if (hasAnyValue('WifeTax')) h += '<div class="tt-row" style="color:' + WIFE_COLOR + '"><span>Wife Income Tax</span><span class="v">(' + moneyTooltip(d.WifeTax || 0) + ')</span></div>';
-  if (hasAnyValue('HusbandTax') || hasAnyValue('WifeTax')) h += '<div class="tt-row tax"><span>Combined Income Tax</span><span class="v">(' + moneyTooltip((d.HusbandTax || 0) + (d.WifeTax || 0)) + ')</span></div>';
+  if (hasAnyValue('SelfTax')) h += '<div class="tt-row" style="color:' + SELF_COLOR + '"><span>Your Income Tax</span><span class="v">(' + moneyTooltip(d.SelfTax || 0) + ')</span></div>';
+  if (hasAnyValue('SpouseTax')) h += '<div class="tt-row" style="color:' + SPOUSE_COLOR + '"><span>Spouse Income Tax</span><span class="v">(' + moneyTooltip(d.SpouseTax || 0) + ')</span></div>';
+  if (hasAnyValue('SelfTax') || hasAnyValue('SpouseTax')) h += '<div class="tt-row tax"><span>Combined Income Tax</span><span class="v">(' + moneyTooltip((d.SelfTax || 0) + (d.SpouseTax || 0)) + ')</span></div>';
   if (hasAnyValue('Combined net income')) h += '<div class="tt-row total"><span>Combined After-Tax Cash Flow</span><span class="v">' + moneyTooltip(d["Combined net income"] || 0) + '</span></div>';
   if (hasAnyValue('Combined Total Assets')) h += '<div class="tt-row" style="color:#12203A"><span>Combined Total Assets</span><span class="v">' + moneyTooltip(d["Combined Total Assets"] || 0) + '</span></div>';
   if (d.PensionSplitText) h += '<div class="tt-group">Planning Context</div>';
@@ -1825,7 +1825,7 @@ function renderAssumptions() {
     '<li>Planning Annual Inflation is ' + state.inflationPct.toFixed(1) + '%/yr. The app treats 2026 tax brackets, credits, OAS recovery threshold and modeled benefit parameters as a base-year system and inflation-adjusts them for future projection years. OAS and CPP/QPP are also indexed with this same planning assumption. This is a projection convention, not a forecast of future legislation.</li>' +
     '<li><strong>Effective RRIF withdrawal cost:</strong> when an RRIF balance exists, chart tooltips estimate the household cost of one extra $1,000 RRIF withdrawal in that year after re-optimizing pension splitting and allowing modeled income tax, OAS recovery, GIS and provincial top-ups to respond. It is an educational marginal estimate only and does not change the account balance in the scenario.</li>' +
     '<li>Investment returns are flat, deterministic annual rates — no sequence-of-returns risk or volatility is modeled.</li>' +
-    '<li>The app plans for a couple: husband and wife each have a fully independent copy of every account and benefit above, toggled via "Planning For." Switching people never resets or overwrites the other person\'s inputs. Each spouse\'s tax is calculated entirely separately, since Canada taxes individuals rather than couples. The "Family income" chart aligns both spouses onto one shared calendar timeline using "Wife\'s Age When Husband Retire" to compute the age gap.</li>' +
+    '<li>The app plans for a couple: you and your spouse each have a fully independent copy of every account and benefit above, toggled via "Planning For." Switching people never resets or overwrites the other person\'s inputs. Each spouse\'s tax is calculated entirely separately, since Canada taxes individuals rather than couples. The "Family income" chart aligns both spouses onto one shared calendar timeline using "Spouse\'s Age When You Retire" to compute the age gap.</li>' +
     '<li><strong>Usability:</strong> charts support mouse hover, touch/click and keyboard focus. Tooltips are kept inside the visible browser window, and the input grid switches to one column on narrow phone screens.</li>' +
     '<li>Educational planning tool, not tax or investment advice.</li>' +
     '</ul>';
@@ -1846,84 +1846,84 @@ function pensionSplitTextForRows(primaryRow, spouseRow, primaryLabel, spouseLabe
 }
 
 function renderResults() {
-  const husbandStartAge = state.husband.retireAge;
-  const wifeStartAge = state.wife.retireAge;
+  const selfStartAge = state.self.retireAge;
+  const spouseStartAge = state.spouse.retireAge;
   const ageGap = state.ageGap;
 
   // Raw simulations establish account cash flows. Automatic pension splitting
   // is then applied year-by-year as a tax election only; it never moves the
   // underlying pension/RRIF cash between spouses.
-  const husbandOwnRaw = simulatePerson(state.husband, husbandStartAge);
-  const wifeOwnRaw = simulatePerson(state.wife, wifeStartAge);
-  const wifeForHusbandRaw = simulatePerson(state.wife, husbandStartAge + ageGap);
-  const husbandForWifeRaw = simulatePerson(state.husband, wifeStartAge - ageGap);
+  const selfOwnRaw = simulatePerson(state.self, selfStartAge);
+  const spouseOwnRaw = simulatePerson(state.spouse, spouseStartAge);
+  const spouseForSelfRaw = simulatePerson(state.spouse, selfStartAge + ageGap);
+  const selfForSpouseRaw = simulatePerson(state.self, spouseStartAge - ageGap);
 
-  const hOwnOpt = optimizePensionSplittingRows(husbandOwnRaw.rows, wifeForHusbandRaw.rows);
-  const wOwnOpt = optimizePensionSplittingRows(wifeOwnRaw.rows, husbandForWifeRaw.rows);
+  const selfOwnOpt = optimizePensionSplittingRows(selfOwnRaw.rows, spouseForSelfRaw.rows);
+  const spouseOwnOpt = optimizePensionSplittingRows(spouseOwnRaw.rows, selfForSpouseRaw.rows);
 
-  const ownRows = state.selectedPerson === "husband" ? hOwnOpt.primaryRows : wOwnOpt.primaryRows;
-  const otherOwnRows = state.selectedPerson === "husband" ? hOwnOpt.secondaryRows : wOwnOpt.secondaryRows;
-  const ownGG = state.selectedPerson === "husband" ? hOwnOpt.primaryBenefits : wOwnOpt.primaryBenefits;
-  const ownRawRows = state.selectedPerson === "husband" ? husbandOwnRaw.rows : wifeOwnRaw.rows;
-  const otherOwnRawRows = state.selectedPerson === "husband" ? wifeForHusbandRaw.rows : husbandForWifeRaw.rows;
+  const ownRows = state.selectedPerson === "self" ? selfOwnOpt.primaryRows : spouseOwnOpt.primaryRows;
+  const otherOwnRows = state.selectedPerson === "self" ? selfOwnOpt.secondaryRows : spouseOwnOpt.secondaryRows;
+  const ownGG = state.selectedPerson === "self" ? selfOwnOpt.primaryBenefits : spouseOwnOpt.primaryBenefits;
+  const ownRawRows = state.selectedPerson === "self" ? selfOwnRaw.rows : spouseOwnRaw.rows;
+  const otherOwnRawRows = state.selectedPerson === "self" ? spouseForSelfRaw.rows : selfForSpouseRaw.rows;
 
-  const familyStartAgeHusband = Math.min(husbandStartAge, wifeStartAge - ageGap);
-  const husbandFamilyRaw = simulatePerson(state.husband, familyStartAgeHusband);
-  const wifeFamilyRaw = simulatePerson(state.wife, familyStartAgeHusband + ageGap);
-  const familyOpt = optimizePensionSplittingRows(husbandFamilyRaw.rows, wifeFamilyRaw.rows);
-  const husbandFamilyRows = familyOpt.primaryRows;
-  const wifeFamilyRows = familyOpt.secondaryRows;
-  const husbandFamilyGG = familyOpt.primaryBenefits;
-  const wifeFamilyGG = familyOpt.secondaryBenefits;
+  const familyStartAgeSelf = Math.min(selfStartAge, spouseStartAge - ageGap);
+  const selfFamilyRaw = simulatePerson(state.self, familyStartAgeSelf);
+  const spouseFamilyRaw = simulatePerson(state.spouse, familyStartAgeSelf + ageGap);
+  const familyOpt = optimizePensionSplittingRows(selfFamilyRaw.rows, spouseFamilyRaw.rows);
+  const selfFamilyRows = familyOpt.primaryRows;
+  const spouseFamilyRows = familyOpt.secondaryRows;
+  const selfFamilyGG = familyOpt.primaryBenefits;
+  const spouseFamilyGG = familyOpt.secondaryBenefits;
 
-  const combinedIncomeChartData = husbandFamilyRows.map((hRow, i) => {
-    const wRow = wifeFamilyRows[i];
-    const hGG = husbandFamilyGG[i], wGG = wifeFamilyGG[i];
-    const hProvTax = Math.max(0, hRow.provTax - hGG.taxReduction);
-    const hTotalTax = hRow.fedTax + hProvTax;
-    const wProvTax = Math.max(0, wRow.provTax - wGG.taxReduction);
-    const wTotalTax = wRow.fedTax + wProvTax;
+  const combinedIncomeChartData = selfFamilyRows.map((selfRow, i) => {
+    const spouseRow = spouseFamilyRows[i];
+    const selfGG = selfFamilyGG[i], spouseGG = spouseFamilyGG[i];
+    const selfProvTax = Math.max(0, selfRow.provTax - selfGG.taxReduction);
+    const selfTotalTax = selfRow.fedTax + selfProvTax;
+    const spouseProvTax = Math.max(0, spouseRow.provTax - spouseGG.taxReduction);
+    const spouseTotalTax = spouseRow.fedTax + spouseProvTax;
 
-    const husbandAssets = hRow.regClose + hRow.rrspClose + hRow.tfsaClose;
-    const wifeAssets = wRow.regClose + wRow.rrspClose + wRow.tfsaClose;
-    const husbandGross = hRow.totalIncome + hGG.gis + hGG.topUp;
-    const wifeGross = wRow.totalIncome + wGG.gis + wGG.topUp;
+    const selfAssets = selfRow.regClose + selfRow.rrspClose + selfRow.tfsaClose;
+    const spouseAssets = spouseRow.regClose + spouseRow.rrspClose + spouseRow.tfsaClose;
+    const selfGross = selfRow.totalIncome + selfGG.gis + selfGG.topUp;
+    const spouseGross = spouseRow.totalIncome + spouseGG.gis + spouseGG.topUp;
     return {
-      age: hRow.age, husbandAge: hRow.age, wifeAge: wRow.age,
-      Husband: Math.round(husbandGross), Wife: Math.round(wifeGross),
-      HusbandTax: Math.round(hTotalTax), WifeTax: Math.round(wTotalTax),
-      Tax: Math.round(hTotalTax + wTotalTax),
-      "Gross Income": Math.round(husbandGross + wifeGross),
-      "Tax Rate": (husbandGross + wifeGross) > 0 ? (hTotalTax + wTotalTax) / (husbandGross + wifeGross) * 100 : 0,
-      "Combined net income": Math.round(hRow.totalIncome - hTotalTax + hGG.gis + hGG.topUp + wRow.totalIncome - wTotalTax + wGG.gis + wGG.topUp),
-      "Combined Total Assets": Math.round(husbandAssets + wifeAssets),
-      PensionSplitText: pensionSplitTextForRows(hRow, wRow, 'Husband', 'Wife'),
+      age: selfRow.age, selfAge: selfRow.age, spouseAge: spouseRow.age,
+      You: Math.round(selfGross), Spouse: Math.round(spouseGross),
+      SelfTax: Math.round(selfTotalTax), SpouseTax: Math.round(spouseTotalTax),
+      Tax: Math.round(selfTotalTax + spouseTotalTax),
+      "Gross Income": Math.round(selfGross + spouseGross),
+      "Tax Rate": (selfGross + spouseGross) > 0 ? (selfTotalTax + spouseTotalTax) / (selfGross + spouseGross) * 100 : 0,
+      "Combined net income": Math.round(selfRow.totalIncome - selfTotalTax + selfGG.gis + selfGG.topUp + spouseRow.totalIncome - spouseTotalTax + spouseGG.gis + spouseGG.topUp),
+      "Combined Total Assets": Math.round(selfAssets + spouseAssets),
+      PensionSplitText: pensionSplitTextForRows(selfRow, spouseRow, 'You', 'Spouse'),
     };
   });
   let cumCombinedTax = 0, cumCombinedGross = 0;
   combinedIncomeChartData.forEach(d => {
-    cumCombinedTax += d.HusbandTax + d.WifeTax;
+    cumCombinedTax += d.SelfTax + d.SpouseTax;
     cumCombinedGross += d["Gross Income"];
     d["Cumulative Tax"] = Math.round(cumCombinedTax);
     d["Cumulative Gross Income"] = Math.round(cumCombinedGross);
     d["Cumulative Tax Rate"] = cumCombinedGross > 0 ? (cumCombinedTax / cumCombinedGross * 100) : 0;
   });
 
-  const combinedBalanceChartData = husbandFamilyRows.map((hRow, i) => {
-    const wRow = wifeFamilyRows[i];
-    const husbandAssets = hRow.regClose + hRow.rrspClose + hRow.tfsaClose;
-    const wifeAssets = wRow.regClose + wRow.rrspClose + wRow.tfsaClose;
+  const combinedBalanceChartData = selfFamilyRows.map((selfRow, i) => {
+    const spouseRow = spouseFamilyRows[i];
+    const selfAssets = selfRow.regClose + selfRow.rrspClose + selfRow.tfsaClose;
+    const spouseAssets = spouseRow.regClose + spouseRow.rrspClose + spouseRow.tfsaClose;
     return {
-      age: hRow.age, husbandAge: hRow.age, wifeAge: wRow.age,
-      Husband: Math.round(husbandAssets), Wife: Math.round(wifeAssets),
-      "Combined Total Assets": Math.round(husbandAssets + wifeAssets),
+      age: selfRow.age, selfAge: selfRow.age, spouseAge: spouseRow.age,
+      You: Math.round(selfAssets), Spouse: Math.round(spouseAssets),
+      "Combined Total Assets": Math.round(selfAssets + spouseAssets),
     };
   });
 
   const chartData = ownRows.map((r, i) => ({
     age: r.age,
-    husbandAge: state.selectedPerson === "husband" ? r.age : otherOwnRows[i].age,
-    wifeAge: state.selectedPerson === "wife" ? r.age : otherOwnRows[i].age,
+    selfAge: state.selectedPerson === "self" ? r.age : otherOwnRows[i].age,
+    spouseAge: state.selectedPerson === "spouse" ? r.age : otherOwnRows[i].age,
     Regular: Math.round(r.regClose), "RRSP/RRIF": Math.round(r.rrspClose),
     TFSA: Math.round(r.tfsaClose),
   }));
@@ -1940,13 +1940,13 @@ function renderResults() {
     const marginalRate = (taxAtMore - taxAtCurrent) / MARGINAL_DELTA * 100;
     const effectiveWithdrawalRate = (ownRawRows[i].rrspOpen > 0 || ownRawRows[i].rrspWD > 0)
       ? effectiveMarginalRrifWithdrawalRate(ownRawRows[i], otherOwnRawRows[i]) : null;
-    const primaryLabel = state.selectedPerson === 'husband' ? 'Husband' : 'Wife';
-    const spouseLabel = state.selectedPerson === 'husband' ? 'Wife' : 'Husband';
+    const primaryLabel = state.selectedPerson === 'self' ? 'You' : 'Spouse';
+    const spouseLabel = state.selectedPerson === 'self' ? 'Spouse' : 'You';
 
     return {
       age: r.age,
-      husbandAge: state.selectedPerson === "husband" ? r.age : otherOwnRows[i].age,
-      wifeAge: state.selectedPerson === "wife" ? r.age : otherOwnRows[i].age,
+      selfAge: state.selectedPerson === "self" ? r.age : otherOwnRows[i].age,
+      spouseAge: state.selectedPerson === "spouse" ? r.age : otherOwnRows[i].age,
       Regular: Math.round(r.regWD), "RRSP/RRIF": Math.round(r.rrspWD), TFSA: Math.round(r.tfsaWD),
       OAS: Math.round(r.oasNet), CPP: Math.round(r.cpp), GIS: Math.round(ownGG[i].gis), TopUp: Math.round(ownGG[i].topUp),
       Pension: Math.round(r.pension), "Other income": Math.round(r.otherIncome),
@@ -1969,11 +1969,11 @@ function renderResults() {
 
   const lbl = personLabel();
   document.getElementById('incomeChartLabel').innerHTML = collapsibleSectionLabel('income', 'scale', '#1F6F5C', 'Cash flow by source, with after-tax trend — ' + lbl);
-  document.getElementById('combinedIncomeChartLabel').innerHTML = collapsibleSectionLabel('combinedIncome', 'users', '#12203A', 'Combined cash flow, husband + wife');
+  document.getElementById('combinedIncomeChartLabel').innerHTML = collapsibleSectionLabel('combinedIncome', 'users', '#12203A', 'Combined cash flow, you + spouse');
   document.getElementById('taxChartLabel').innerHTML = collapsibleSectionLabel('tax', 'scale', '#B5542B', 'Income tax by year, with tax rates — ' + lbl);
   document.getElementById('combinedTaxChartLabel').innerHTML = collapsibleSectionLabel('combinedTax', 'scale', '#B5542B', 'Combined income tax by year, with tax rates');
   document.getElementById('balanceChartLabel').innerHTML = collapsibleSectionLabel('balance', 'trending', '#1F6F5C', 'Account balances by age — ' + lbl);
-  document.getElementById('combinedBalanceChartLabel').innerHTML = collapsibleSectionLabel('combinedBalance', 'trending', '#12203A', 'Combined account balance, husband + wife');
+  document.getElementById('combinedBalanceChartLabel').innerHTML = collapsibleSectionLabel('combinedBalance', 'trending', '#12203A', 'Combined account balance, you + spouse');
 
   document.getElementById('incomeChart').style.display = state.collapsed.income ? 'none' : '';
   document.getElementById('combinedIncomeChart').style.display = state.collapsed.combinedIncome ? 'none' : '';
@@ -1997,9 +1997,9 @@ function renderResults() {
     incomeTooltipHTML, 'Age ', { key: 'OASClawback', lineKey: 'Net income', color: '#DC2626' });
 
   buildChart('combinedIncomeChart', combinedIncomeChartData,
-    [{ key: 'Husband', color: HUSBAND_COLOR, name: 'Husband' }, { key: 'Wife', color: WIFE_COLOR, name: 'Wife' }],
+    [{ key: 'You', color: SELF_COLOR, name: 'You' }, { key: 'Spouse', color: SPOUSE_COLOR, name: 'Spouse' }],
     [{ key: 'Combined net income', color: '#12203A', name: 'Combined After-Tax Cash Flow' }],
-    familyTooltipHTML, "Husband's age ");
+    familyTooltipHTML, "Your age ");
 
   buildChart('taxChart', incomeChartData,
     [{ key: 'Tax', color: '#B5542B', name: 'Income Tax' }],
@@ -2008,17 +2008,17 @@ function renderResults() {
     taxTooltipHTML, 'Age ', null, { dualAxis: true, rightAxisFormat: 'percent' });
 
   buildChart('combinedTaxChart', combinedIncomeChartData,
-    [{ key: 'HusbandTax', color: HUSBAND_COLOR, name: 'Husband Income Tax' }, { key: 'WifeTax', color: WIFE_COLOR, name: 'Wife Income Tax' }],
+    [{ key: 'SelfTax', color: SELF_COLOR, name: 'Your Income Tax' }, { key: 'SpouseTax', color: SPOUSE_COLOR, name: 'Spouse Income Tax' }],
     [{ key: 'Tax Rate', color: '#8B1A1A', name: 'Income Tax / Gross Cash Flow' }, { key: 'Cumulative Tax Rate', color: '#12203A', name: 'Cumulative Income Tax / Cumulative Gross Cash Flow' }],
-    taxTooltipHTML, "Husband's age ", null, { dualAxis: true, rightAxisFormat: 'percent' });
+    taxTooltipHTML, "Your age ", null, { dualAxis: true, rightAxisFormat: 'percent' });
 
   buildChart('balanceChart', chartData,
     [{ key: 'Regular', color: '#1F6F5C', name: 'Regular' }, { key: 'RRSP/RRIF', color: '#2C4A7C', name: 'RRIF' }, { key: 'TFSA', color: TFSA_COLOR, name: 'TFSA' }],
     [], defaultTooltipHTML, 'Age ');
 
   buildChart('combinedBalanceChart', combinedBalanceChartData,
-    [{ key: 'Husband', color: HUSBAND_COLOR, name: 'Husband' }, { key: 'Wife', color: WIFE_COLOR, name: 'Wife' }],
-    [], familyTooltipHTML, "Husband's age ");
+    [{ key: 'You', color: SELF_COLOR, name: 'You' }, { key: 'Spouse', color: SPOUSE_COLOR, name: 'Spouse' }],
+    [], familyTooltipHTML, "Your age ");
 
   ['incomeChartLabel', 'combinedIncomeChartLabel', 'taxChartLabel', 'combinedTaxChartLabel', 'balanceChartLabel', 'combinedBalanceChartLabel'].forEach(labelId => {
     const btn = document.querySelector('#' + labelId + ' .section-toggle');
@@ -2037,8 +2037,8 @@ document.getElementById('provinceSelect').addEventListener('change', e => {
   state.province = e.target.value;
   
   const maxPensionAge = pensionStartMax(state.province);
-  state.husband.cppStartAge = Math.min(state.husband.cppStartAge, maxPensionAge);
-  state.wife.cppStartAge = Math.min(state.wife.cppStartAge, maxPensionAge);
+  state.self.cppStartAge = Math.min(state.self.cppStartAge, maxPensionAge);
+  state.spouse.cppStartAge = Math.min(state.spouse.cppStartAge, maxPensionAge);
   
   renderIntro();
   renderControls();
