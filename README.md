@@ -42,11 +42,11 @@ It does not require you to upload your financial information to a server for cal
 
 ![Retirement Income & Tax main screen](screenshots/App_Start.png)
 
-### The husband's settings
+### Your settings
 
 ![IThe husband's settings](screenshots/Husband.png)
 
-### The wife's settings
+### The spouse's settings
 
 ![IThe wife's settings](screenshots/Wife.png)
 
